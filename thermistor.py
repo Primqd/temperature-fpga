@@ -26,8 +26,8 @@ CAPACITANCE_F = 1e4 * 1e-12    # 10^4 pF = 10 nF
 
 # ---- Thermistor calibration (Beta-parameter model) ----
 # 1/T = 1/T0 + (1/BETA) * ln(R / R0)
-R0_OHMS = 60_000.0             # resistance at calibration temp T0
-T0_K = 26.11 + 273.15          # calibration temp: 79 F = 26.11 C
+R0_OHMS = 50_300             # resistance at calibration temp T0
+T0_K = 25 + 273.15          # calibration temp: 25C
 BETA = 3950.0                  # typical NTC beta; replace with datasheet value
 
 
@@ -35,6 +35,7 @@ def ticks_to_resistance(ticks: float) -> float:
     """Convert measured clock ticks (one RC time constant) to resistance (ohms)."""
     clock_period_s = 1.0 / CLOCK_FREQ_HZ
     tau_s = ticks * clock_period_s
+    tau_s /= 1.28205128205 # average RC constants before PMOD1 flips
     r_ohms = tau_s / CAPACITANCE_F
     return r_ohms
 
@@ -73,13 +74,14 @@ def write_mem_file(min_ticks, max_ticks, step):
         r_ohms = ticks_to_resistance(ticks)
         r_ohms = max(r_ohms, 1e-9)  # avoid log(0) domain error at ticks == 0 or something
         temp_c = resistance_to_temperature_c(r_ohms)
+        temp_f = temp_c * 9.0 / 5.0 + 32.0
 
-        temp_c_int = round(temp_c)
-        temp_c_int = max(0, min(99, round(temp_c_int)))  # clamp to two-digit display
+        temp_f_int = round(temp_f)
+        temp_f_int = max(0, min(99, round(temp_f_int)))  # clamp to two-digit display
 
-        print(ticks, temp_c_int)
-        ones.append(str(temp_c_int % 10))
-        tens.append(str((temp_c_int // 10) % 10))
+        print(ticks, temp_f_int)
+        ones.append(str(temp_f_int % 10))
+        tens.append(str((temp_f_int // 10) % 10))
 
     with open("./lut_ones.mem", "w") as f:
         f.write("\n".join(ones) + "\n")
