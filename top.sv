@@ -63,6 +63,11 @@ module top(
    end
 
 
+   // tones for buzzer
+   reg [14:0] tone_divider = 0;
+   reg tone = 1'b0;
+
+
    always @(posedge CLK) begin
        state <= next_state;
        case(state)
@@ -77,13 +82,13 @@ module top(
                    LED1 = 1'b1;
                    LED2 = 1'b0;
                    LED3 = 1'b0;
-                   PMOD2 = 1'b1;
+                   PMOD2 = tone;
                end
                else if(tens[counter_charge[15:8]] > 7) begin // hot
                    LED1 = 1'b1;
                    LED2 = 1'b1;
                    LED3 = 1'b1;
-                   PMOD2 = 1'b1;
+                   PMOD2 = tone;
                end
                else begin // warm
                    LED1 = 1'b1;
@@ -105,6 +110,13 @@ module top(
                else counter_charge <= counter_charge + 1'b1;
            end
        endcase
+
+
+       tone_divider <= tone_divider + 1'b1;
+       if(tone_divider == 25000) begin
+           tone <= ~tone;
+           tone_divider <= 1'b0;
+       end
    end
 
 
